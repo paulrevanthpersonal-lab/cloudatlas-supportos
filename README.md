@@ -15,9 +15,10 @@ Support teams often lose time across chat messages, ticket fields, screenshots, 
 ## 3. Core capabilities
 
 - Impact-first incident intake and priority-based SLA targets
-- Case queue across access, network, API, application, and data incidents
+- Thirty seeded cases across identity, network, application, data, Linux, cloud, delivery, and security
 - Append-only evidence and status timeline
-- Recovery-confidence and service-health views
+- Eighteen searchable operational runbooks
+- Recovery-confidence, category, priority, and service-health views
 - Typed REST API with OpenAPI documentation
 - Persistent local SQLite datastore
 - Responsive desktop and mobile workspace
@@ -52,7 +53,7 @@ See [the architecture record](docs/ARCHITECTURE.md) for scaling and production d
 
 ## 7. Data model
 
-`cases` stores current operational state. `events` stores the evidence trail. The separation allows fast queue rendering without discarding the sequence of diagnostic and recovery decisions.
+`cases` stores current operational state for 30 seeded scenarios. `events` stores three to six evidence points per case. `runbooks` stores 18 searchable procedures. The separation allows fast queue rendering without discarding diagnostic and recovery decisions.
 
 ## 8. REST API
 
@@ -84,7 +85,7 @@ pytest
 python -m compileall app
 ```
 
-Tests cover health, seeded data, validation, case creation, and verified resolution. GitHub Actions repeats the same checks for every change.
+Tests cover the 30-case seed, category breadth, case detail timelines, event creation, 18 runbooks, validation, case creation, and verified resolution. GitHub Actions repeats the same checks for every change.
 
 ## 12. Automated screenshots
 
@@ -100,7 +101,7 @@ Operational startup, investigation, reset, and recovery steps are in [docs/OPERA
 
 ## 14. Security
 
-The demo implements validation, parameterized SQL, non-root containers, minimal CI permissions, and escaped UI content. Review [docs/SECURITY.md](docs/SECURITY.md) before adapting it to real support data.
+The local implementation uses validation, parameterized SQL, non-root containers, minimal CI permissions, and escaped UI content. Review [docs/SECURITY.md](docs/SECURITY.md) before adapting it to real support data.
 
 ## 15. Repository structure
 
@@ -117,7 +118,7 @@ docs/                Architecture, API, security, and runbooks
 
 - Why incident state and evidence history are separate records
 - How SLA targets are derived from priority
-- Why SQLite is appropriate for the demo and where PostgreSQL fits
+- Why SQLite is appropriate for a single-node review build and where PostgreSQL fits
 - How the UI communicates priority without relying on color alone
 - Which controls are required before production use
 
@@ -132,4 +133,3 @@ docs/                Architecture, API, security, and runbooks
 ## 18. License
 
 Released under the [MIT License](LICENSE).
-

@@ -19,7 +19,27 @@ def test_health_and_seeded_cases():
         assert client.get("/health").json()["status"] == "ok"
         cases = client.get("/api/cases")
         assert cases.status_code == 200
-        assert len(cases.json()) >= 5
+        assert len(cases.json()) == 30
+        assert len({case["external_id"] for case in cases.json()}) == 30
+        assert len({case["category"] for case in cases.json()}) >= 7
+
+
+def test_incident_detail_timeline_search_and_runbooks():
+    with TestClient(app) as client:
+        cases = client.get("/api/cases", params={"query": "DNS"}).json()
+        assert any(case["external_id"] == "CA-1003" for case in cases)
+        detail = client.get(f"/api/cases/{cases[0]['id']}")
+        assert detail.status_code == 200
+        assert len(detail.json()["events"]) >= 3
+        event = client.post(
+            f"/api/cases/{cases[0]['id']}/events",
+            json={"stage": "validate", "detail": "Resolver path and application lookup verified from both subnets"},
+        )
+        assert event.status_code == 201
+        runbooks = client.get("/api/runbooks")
+        assert runbooks.status_code == 200
+        assert len(runbooks.json()) == 18
+        assert client.get("/api/runbooks", params={"query": "Terraform"}).json()[0]["id"] == "SOP-010"
 
 
 def test_create_and_resolve_case():
@@ -42,4 +62,3 @@ def test_validation_rejects_incomplete_case():
     with TestClient(app) as client:
         response = client.post("/api/cases", json={"title": "x"})
         assert response.status_code == 422
-
