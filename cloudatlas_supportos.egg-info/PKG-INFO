@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: cloudatlas-supportos
+Version: 1.0.0
+Summary: Evidence-driven IT support operations platform for incident triage, SLA visibility, and verified recovery.
+Requires-Python: >=3.11
+License-File: LICENSE
+Requires-Dist: fastapi<1,>=0.115
+Requires-Dist: uvicorn[standard]<1,>=0.32
+Provides-Extra: dev
+Requires-Dist: httpx<1,>=0.28; extra == "dev"
+Requires-Dist: pytest<9,>=8.3; extra == "dev"
+Dynamic: license-file

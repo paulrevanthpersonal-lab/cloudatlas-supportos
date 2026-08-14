@@ -1,0 +1,11 @@
+services:
+  cloudatlas:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - cloudatlas-data:/app/data
+    restart: unless-stopped
+volumes:
+  cloudatlas-data:
+
