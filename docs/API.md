@@ -23,3 +23,17 @@ curl -X POST http://localhost:8000/api/cases \
 ```
 
 `GET /api/cases` accepts `query`, `status`, and `priority` filters. `GET /api/runbooks` accepts `query`. The generated OpenAPI page remains the source of truth for request schemas and response validation.
+
+## SLA metrics
+
+`GET /api/metrics` reports the active queue's deadline-based SLA summary in the
+`sla` field. A deadline is calculated from each case's `opened_at` timestamp and
+`sla_minutes` target. Active cases are classified as:
+
+- `on_time`: more than 15 minutes remain before the deadline.
+- `at_risk`: 1 to 15 minutes remain.
+- `breached`: the deadline has passed or is exactly due.
+
+Resolved cases are excluded from the active compliance percentage. `sla_health`
+is retained as a compatibility field and equals `sla.compliance_percent`. These
+are local demonstration metrics, not an assertion about real service performance.

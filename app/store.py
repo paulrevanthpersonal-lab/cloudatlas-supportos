@@ -168,13 +168,25 @@ def list_runbooks(query: str = "") -> list[dict]:
         rows = conn.execute("SELECT * FROM runbooks WHERE title LIKE ? OR tags LIKE ? ORDER BY id",(f"%{query}%",f"%{query}%")).fetchall()
         return [dict(row) for row in rows]
 
-def metrics() -> dict:
+def metrics(reference_time: datetime | None = None) -> dict:
+    reference_time = reference_time or datetime.now(UTC)
     with connection() as conn:
         total = conn.execute("SELECT COUNT(*) FROM cases").fetchone()[0]; active = conn.execute("SELECT COUNT(*) FROM cases WHERE status!='resolved'").fetchone()[0]
         by_status = {row[0]:row[1] for row in conn.execute("SELECT status,COUNT(*) FROM cases GROUP BY status")}
         by_category = {row[0]:row[1] for row in conn.execute("SELECT category,COUNT(*) FROM cases GROUP BY category ORDER BY COUNT(*) DESC")}
         critical = conn.execute("SELECT COUNT(*) FROM cases WHERE priority='critical' AND status!='resolved'").fetchone()[0]
-        return {"total":total,"active":active,"critical":critical,"resolved":by_status.get("resolved",0),"sla_health":round(100-(critical/max(active,1)*10),1),"by_status":by_status,"by_category":by_category,"runbooks":conn.execute("SELECT COUNT(*) FROM runbooks").fetchone()[0]}
+        sla = {"active": active, "on_time": 0, "at_risk": 0, "breached": 0}
+        for row in conn.execute("SELECT opened_at,sla_minutes FROM cases WHERE status != 'resolved'"):
+            deadline = datetime.fromisoformat(row["opened_at"]) + timedelta(minutes=row["sla_minutes"])
+            remaining = deadline - reference_time
+            if remaining <= timedelta():
+                sla["breached"] += 1
+            elif remaining <= timedelta(minutes=15):
+                sla["at_risk"] += 1
+            else:
+                sla["on_time"] += 1
+        sla["compliance_percent"] = round(sla["on_time"] / active * 100, 1) if active else 100.0
+        return {"total":total,"active":active,"critical":critical,"resolved":by_status.get("resolved",0),"sla_health":sla["compliance_percent"],"sla":sla,"by_status":by_status,"by_category":by_category,"runbooks":conn.execute("SELECT COUNT(*) FROM runbooks").fetchone()[0]}
 
 def recent_events() -> list[dict]:
     with connection() as conn:
