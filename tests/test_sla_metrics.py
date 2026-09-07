@@ -53,3 +53,18 @@ def test_sla_metrics_exclude_resolved_cases_from_active_compliance(tmp_path, mon
         "breached": 0,
         "compliance_percent": 100.0,
     }
+
+
+def test_sla_metrics_treat_legacy_naive_timestamps_as_utc(tmp_path, monkeypatch):
+    monkeypatch.setattr(store, "DB_PATH", tmp_path / "cloudatlas.db")
+    store.initialize()
+    with store.connection() as conn:
+        conn.execute("UPDATE cases SET status = 'resolved'")
+        conn.execute(
+            "UPDATE cases SET status = 'investigating', opened_at = ?, sla_minutes = 60 WHERE external_id = ?",
+            ("2026-09-07T11:30:00", "CA-1001"),
+        )
+
+    result = store.metrics(reference_time=datetime(2026, 9, 7, 12, 0, tzinfo=UTC))
+
+    assert result["sla"]["on_time"] == 1

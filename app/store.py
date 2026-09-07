@@ -170,6 +170,8 @@ def list_runbooks(query: str = "") -> list[dict]:
 
 def metrics(reference_time: datetime | None = None) -> dict:
     reference_time = reference_time or datetime.now(UTC)
+    if reference_time.tzinfo is None:
+        reference_time = reference_time.replace(tzinfo=UTC)
     with connection() as conn:
         total = conn.execute("SELECT COUNT(*) FROM cases").fetchone()[0]; active = conn.execute("SELECT COUNT(*) FROM cases WHERE status!='resolved'").fetchone()[0]
         by_status = {row[0]:row[1] for row in conn.execute("SELECT status,COUNT(*) FROM cases GROUP BY status")}
@@ -177,7 +179,10 @@ def metrics(reference_time: datetime | None = None) -> dict:
         critical = conn.execute("SELECT COUNT(*) FROM cases WHERE priority='critical' AND status!='resolved'").fetchone()[0]
         sla = {"active": active, "on_time": 0, "at_risk": 0, "breached": 0}
         for row in conn.execute("SELECT opened_at,sla_minutes FROM cases WHERE status != 'resolved'"):
-            deadline = datetime.fromisoformat(row["opened_at"]) + timedelta(minutes=row["sla_minutes"])
+            opened_at = datetime.fromisoformat(row["opened_at"])
+            if opened_at.tzinfo is None:
+                opened_at = opened_at.replace(tzinfo=UTC)
+            deadline = opened_at + timedelta(minutes=row["sla_minutes"])
             remaining = deadline - reference_time
             if remaining <= timedelta():
                 sla["breached"] += 1

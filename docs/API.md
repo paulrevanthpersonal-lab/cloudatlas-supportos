@@ -37,3 +37,5 @@ curl -X POST http://localhost:8000/api/cases \
 Resolved cases are excluded from the active compliance percentage. `sla_health`
 is retained as a compatibility field and equals `sla.compliance_percent`. These
 are local demonstration metrics, not an assertion about real service performance.
+Legacy timestamps without an offset are interpreted as UTC; current writers always
+store timezone-aware UTC timestamps.
